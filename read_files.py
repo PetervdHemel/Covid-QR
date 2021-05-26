@@ -1,7 +1,5 @@
 from os import walk, getcwd, path
 
-txtFiles = []
-
 dir = getcwd() + '\\data'
 if path.exists(dir):
     _, _, filenames = next(walk(dir))
@@ -13,6 +11,7 @@ else:
 if not filenames:
     print("No files found in working Directory.")
 else:
+    txtFiles = []
     for i in range(len(filenames)):
         '''Check which files are .txt and save them in a new List'''
         if filenames[i][-4:] == '.txt':

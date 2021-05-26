@@ -1,14 +1,15 @@
 from datetime import datetime
-import os
+from os import getcwd, path, mkdir
 
 dataList = []
 inputData = ""
 dt_string = ""
 n = 1
-save_path = 'data'  # Directory to save files to
+dir = getcwd() + '\\data'
 
 
 def write_file(path, data=None):
+    ```Write input data to a file```
     with open(path, 'w') as file:
         file.write(data)
 
@@ -37,7 +38,6 @@ now = datetime.now()  # get datetime
 formatted_dt = now.strftime("%d_%m_%Y_%H_%M_%S")
 dt_string = formatted_dt
 
-# Most of this probably doesn't need to be looped -- fix later
 for i in range(len(dataList)):
     '''Write data to individual files, named by formatted date'''
     # Set default string
@@ -48,18 +48,16 @@ for i in range(len(dataList)):
     # Append text formatting
     formatted_dt += ".txt"
     # Combine path and file name for proper directory
-    completeName = os.path.join(save_path, formatted_dt)
-    # Write to file
-    try:
-        file = open(completeName, 'w')
-        file.close()
-    except FileNotFoundError:
+    completeName = path.join(dir, formatted_dt)
+    # Check if the directory exists
+    if not path.exists(dir):
         try:
-            os.mkdir(save_path)
+            mkdir(dir)  # Create directory if the specified path doesn't exist
         except OSError:
-            print("Creation of the directory %s failed" % save_path)
+            print("Creation of the directory %s failed" %
+                  dir)  # No permissions
         else:
-            print("Succesfully created the directory %s" % save_path)
+            print("Succesfully created the directory %s" % dir)
             write_file(completeName, dataList[i])
     else:
         write_file(completeName, dataList[i])
