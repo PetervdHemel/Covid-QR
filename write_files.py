@@ -37,7 +37,7 @@ now = datetime.now()  # get datetime
 formatted_dt = now.strftime("%d_%m_%Y_%H_%M_%S")
 dt_string = formatted_dt
 
-
+# Most of this probably doesn't need to be looped -- fix later
 for i in range(len(dataList)):
     '''Write data to individual files, named by formatted date'''
     # Set default string
@@ -52,6 +52,7 @@ for i in range(len(dataList)):
     # Write to file
     try:
         file = open(completeName, 'w')
+        file.close()
     except FileNotFoundError:
         try:
             os.mkdir(save_path)
@@ -62,4 +63,3 @@ for i in range(len(dataList)):
             write_file(completeName, dataList[i])
     else:
         write_file(completeName, dataList[i])
-    file.close()
