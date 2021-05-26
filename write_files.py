@@ -1,9 +1,17 @@
 from datetime import datetime
+import os
 
 dataList = []
 inputData = ""
 dt_string = ""
 n = 1
+save_path = 'data'  # Directory to save files to
+
+
+def write_file(path, data=None):
+    with open(path, 'w') as file:
+        file.write(data)
+
 
 while not inputData == 'x':
     '''Take input and datetime : at least 4 lines'''
@@ -39,6 +47,19 @@ for i in range(len(dataList)):
     formatted_dt += str(i)
     # Append text formatting
     formatted_dt += ".txt"
+    # Combine path and file name for proper directory
+    completeName = os.path.join(save_path, formatted_dt)
     # Write to file
-    with open(formatted_dt, 'w') as file:
-        file.write(dataList[i])
+    try:
+        file = open(completeName, 'w')
+    except FileNotFoundError:
+        try:
+            os.mkdir(save_path)
+        except OSError:
+            print("Creation of the directory %s failed" % save_path)
+        else:
+            print("Succesfully created the directory %s" % save_path)
+            write_file(completeName, dataList[i])
+    else:
+        write_file(completeName, dataList[i])
+    file.close()
