@@ -40,10 +40,15 @@ else:
                         # Save order ID in dataOrder
                         dataOrder.append(string[20:])
 
-                # Check if dataOrder is empty
+                # Check if dataOrder is empty or not
                 if dataOrder:
                     print("inputData file exists in Directory")
 
+                    '''
+                    Note: this step is probably optional because of how os.walk
+                    iterates through the Directory, but it doesn't help to be
+                    future or error-proof.
+                    '''
                     # Sort the order of dataOrder
                     dataOrder.sort()
                     # Add data ID back to the ordered list, conver to tuple
