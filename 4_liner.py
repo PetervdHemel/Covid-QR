@@ -1,6 +1,7 @@
 from datetime import datetime
-from os import getcwd, path, mkdir
-from write_files import createFiles
+from os import getcwd
+from write_files import separateFiles
+from format_file import format_datetime
 
 dataList = []
 inputData = ""
@@ -25,12 +26,8 @@ while not inputData == 'x':
             print("Requires at least 4 lines.")
             inputData = False
 
-now = datetime.now()  # get datetime
-# format datetime:
-# dd_mm_YY_H_M_S
-# Using _ for Windows file system instead of : or /
-formatted_dt = now.strftime("%d_%m_%Y_%H_%M_%S")
-dt_string = formatted_dt
+# Returns formatted date and time in a string: dd_mm_YY_H_M_S
+dt_string = format_datetime()
 names = []
 
 for i in range(len(dataList)):
@@ -44,4 +41,5 @@ for i in range(len(dataList)):
     formatted_dt += ".txt"
     names.append(formatted_dt)
 
-createFiles(dir, dataList, names)
+# Create files in the specified directory, using the list of data and file names
+separateFiles(dir, dataList, names)
