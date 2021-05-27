@@ -6,14 +6,14 @@ from uuid import uuid1
 dataList = []
 inputData = ""
 n = 1
-dir = getcwd() + '\\data2'
+dir = getcwd() + "\\data"
 
 # Returns formatted date and time in a string: dd_mm_YY_H_M_S
 dt_string = format_datetime()
 dataList.append(dt_string)  # Add to first value of dataList
 
-while not inputData == 'x':
-    '''Take input and datetime : at least 8 lines'''
+while not inputData == "x":
+    """Take input and datetime : at least 8 lines"""
     try:
         inputData = input(f"Enter Line {n} (x to stop): ")  # Input
     except ValueError:
@@ -21,7 +21,7 @@ while not inputData == 'x':
         continue
     else:
         # check if inputData is not x
-        if inputData != 'x':
+        if inputData != "x":
             # No ValueError Raised, continue interaction
             dataList.append(inputData)
             n += 1
@@ -34,7 +34,7 @@ while not inputData == 'x':
 id = str(uuid1())
 
 # Create file name
-fileName = id + '.txt'
+fileName = id + ".txt"
 
 # Create file in the specified directory, using the file name and data list
 singleFile(dir, fileName, dataList)
