@@ -67,7 +67,8 @@ else:
     txtFiles = []
     for i in range(len(filenames)):
         '''Check which files are .txt and save them in a new List'''
-        if filenames[i][-4:] == '.txt':  # Check last 4 characters of the string
+        # Check last 4 characters of the string
+        if filenames[i][-4:] == '.txt':
             txtFiles.append(filenames[i][:-4])  # Save file name without .txt
 
     print(txtFiles)

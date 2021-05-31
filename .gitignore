@@ -1,1 +1,11 @@
-*.txt
+# Ignore the data directory
+data/
+
+# Ignore Logs
+logs
+*.log
+
+# Ignore IDE specific files
+.idea/
+.vscode/
+*.sw*
