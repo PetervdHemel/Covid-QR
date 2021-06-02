@@ -1,0 +1,4 @@
+Exercise 9 Description:
+Make sure all your exercises are pushed to a Repository on GitHub (including a ReadMe for every exercise). Make sure that Exercises 1-8 are able to be run as "Stand-Alone Executables". Make sure they are named appropriately according to what they do as Applications. 
+- Give each 'App' its own icon.
+- Test every 'App'

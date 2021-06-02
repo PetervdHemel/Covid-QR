@@ -1,0 +1,2 @@
+Exercise 5 Description:
+Make a Python script that, in a simple manner, generates a QR code containing a URL for a website. Test this QR code with your phone.

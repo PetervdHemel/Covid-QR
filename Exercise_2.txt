@@ -1,0 +1,2 @@
+Exercise 2 Description:
+Make a Python script that reads lines of text out of multiple files that have been exported from Exercise 1. You must be able to open the files in order.

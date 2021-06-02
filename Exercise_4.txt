@@ -1,0 +1,2 @@
+Exercise 4 Description:
+Make a Python script that reads lines of text out of the central file exported from Exercise 3. You need to be able to open the correct file by name.

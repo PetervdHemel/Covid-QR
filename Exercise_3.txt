@@ -1,0 +1,2 @@
+Exercise 3 Description:
+Make a Python script where you can enter a minimum of 8 lines. These lines of text must be saved in a central file, named with a unique identifier. One of the lines must contain the date and time at creation.

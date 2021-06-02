@@ -1,0 +1,6 @@
+Exercise 8 Description:
+Until now, you have used your phone to read the QR codes. In this exercise, you must use your laptop with a Camera (internal or external) to read QR codes. Your script must do the following:
+- Use a camera to read QR codes.
+- The data within the QR code must be read and exported to a file.
+- The name of the file must reflect the date and time at that moment.
+- Make several QR codes with the script from Exercise 7 to test.

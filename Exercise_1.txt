@@ -1,0 +1,2 @@
+Exercise 1 Description:
+Make a Python script where you can enter a minimum of 4 lines. These lines have to be saved in different files. The names of the files needs to be directly dependant on the date of creation, followed by an identifying number.

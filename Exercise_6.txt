@@ -1,0 +1,2 @@
+Exercise 6 Description:
+Make a Python script that, in a simple way, generates a QR code containing multiple lines of text. These lines of text can be hard programmed. Test the QR code using your phone.
