@@ -5,7 +5,7 @@ from write_files import checkDir
 
 n = 1
 dataList = []
-userEntry = ' '
+userEntry = " "
 
 while userEntry:
     print("This script will generate a QR Code from multiple lines")
@@ -26,7 +26,7 @@ while userEntry:
 
 if dataList:
     # Concatenate User Entries
-    dataString = '_'.join(dataList)
+    dataString = "_".join(dataList)
 
     dir = getcwd() + "\\data"
 

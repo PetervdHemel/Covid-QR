@@ -50,3 +50,6 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Ignore icons data
+icons/

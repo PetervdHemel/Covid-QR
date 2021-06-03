@@ -14,15 +14,15 @@ def read_qrcodes(frame):
         x, y, w, h = qrcode.rect
 
         # Decode QR code and draw rectangle
-        qrcode_info = qrcode.data.decode('utf-8')
+        qrcode_info = qrcode.data.decode("utf-8")
 
         # Format date and make the file name
         dt_string = format_datetime()
         dir = getcwd() + "\\data"
-        completeName = path.join(dir, dt_string + '.txt')
+        completeName = path.join(dir, dt_string + ".txt")
 
         # Export information to text document
-        with open(completeName, mode='w') as file:
+        with open(completeName, mode="w") as file:
             file.write("Recognized QR Code:" + qrcode_info)
 
         # Signal to stop program
@@ -39,14 +39,18 @@ def main():
     if checkDir(dir):
         # Turn on camera using OpenCV
         camera = cv2.VideoCapture(0)
+
         ret, frame = camera.read()
+
+        if not ret:
+            print("No Camera found")
 
         # Run loop until 'Esc' is pressed
         while ret:
 
             ret, frame = camera.read()
             frame, isFound = read_qrcodes(frame)
-            cv2.imshow('QR Code reader', frame)
+            cv2.imshow("QR Code reader", frame)
 
             # If isFound is True, exit the loop
             if cv2.waitKey(1) & isFound:
@@ -55,8 +59,9 @@ def main():
         # Release camera and close application window
         camera.release()
         cv2.destroyAllWindows()
+        input()
 
 
 # Call main function
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
