@@ -77,7 +77,8 @@ def diacriticCheck(country):
     for name in diacriticCountries:
         if country == name:
             country = country[:-1] + 'ë'
-            return country
+
+    return country
 
 
 def userSelect():
