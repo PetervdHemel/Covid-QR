@@ -2,24 +2,104 @@ import pandas as pd
 import numpy as np
 from os import getcwd, path
 from write_files import checkDir
+from datetime import datetime
 
-euCountries = {'België', 'Bulgarije', 'Cyprus', 'Denemarken', 'Duitsland',
+euCountries = ('België', 'Bulgarije', 'Zuid-Cyprus', 'Denemarken', 'Duitsland',
                'Estland', 'Finland', 'Frankrijk', 'Griekenland',
                'Hongarije', 'Ierland', 'Italië', 'Kroatië', 'Letland',
                'Litouwen', 'Luxemburg', 'Malta', 'Nederland', 'Oostenrijk',
                'Polen', 'Portugal', 'Roemenië', 'Slovenië', 'Slowakije',
-               'Spanje', 'Tsjechië', 'Zweden'}
+               'Spanje', 'Tsjechië', 'Zweden')
+
+
+def genCert(cdata, pdata, passed, reason=None):
+    '''
+
+    '''
+    print(f"Passed: {passed}")
+    print(f"Reason(s): {reason}")
+
+
+def validateCountryReqs(cdata, pdata, ptsReq, counter=0):
+    '''
+    Checks the country specific regulations and requirements, and adds to
+    the requirements counter every time a requirement is met.
+    Finally decides based on when point requirement is met whether the person
+    passes the green certification requirement.
+    '''
+    # Initialize variable that states reason for pass or failure.
+    reason = ''
+    # Test if person has had any vaccination
+    if not type(pdata[8]) is datetime:
+        print(f"No vaccinations: {pdata[8]}")
+    else:
+        reason = f"Vaccination 1: {pdata[10]}\n"
+        counter += 1
+        if not pdata[9] == 'VOLDAAN':
+            # Test if person had a second vaccination
+            if not type(pdata) is datetime:
+                print(
+                    f"No second vaccination or incorrect date/time: {pdata[9]}"
+                )
+            else:  # If a second date for vaccination is registered.
+                reason = f"Vaccination 1 & 2: {pdata[10]}\n"
+                counter += 1
+        else:  # If Vac2 == 'VOLDAAN'
+            reason = f"Vaccination 1 & 2: {pdata[10]}\n"
+            counter += 1
+
+    # First test completed, time to check if it passes:
+    if counter >= ptsReq:
+        genCert(cdata, pdata, True, reason)
+
+
+def validateJAorAZ(cdata, pdata):
+    '''
+    Checks if the person has had a Janssen or Astra Zenica vaccination, and if
+    so, checks them off for a GREEN QR Certification.
+    List index values:
+    0: ID, 1: Voornaam, 2: Achternaam, 3: Email, 4: Geboortedatum, 5: BSN,
+    6: Antistoffen, 7: Positief getest, 8: Vac1, 9: Vac2, 10: Vaccin,
+    11: Geldige PCR test?
+    '''
+    if pdata[10] == 'AZ':
+        genCert(cdata, pdata, True, 'Astra Zenica Vaccination')
+    elif pdata[10] == 'JANS':
+        genCert(cdata, pdata, True, 'Janssen Vaccination')
+    else:
+        validateCountryReqs(cdata, pdata, 2)
+
+
+def cdataLookup(country, datasheet):
+    '''
+    Gets the index of a country and uses this to look up the proper row in
+    datasheet 2, based on country ID (row A). Saves this row into a DataFrame.
+    Returns a list representation of the DataFrame row.
+    '''
+    indexID = euCountries.index(country)
+    row = datasheet.iloc[indexID]
+    cdata = row.values.tolist()
+
+    return cdata
 
 
 def bsnLookup(bsn, datasheet):
     '''
     Look up if the user is present in the database.
-    Returns an empty DataFrame if the BSN is not found in the datasheet.
+    Returns an empty List if the BSN is not found in the datasheet.
     '''
-    pdata = datasheet.loc[datasheet['BSN'] == bsn]
-    if not len(pdata.index) == 0:
+    # Locate BSN in datasheet and save the entire row to pdata
+    df = datasheet.loc[datasheet['BSN'] == bsn]
+    df = df.iloc[0]
+    pdata = []
+
+    # Check if DataFrame has any contents (if BSN found)
+    if not len(df.index) == 0:
+        # Convert DataFrame to a List containing Person Data
+        pdata = df.values.tolist()
         return pdata
     else:
+        # If pdata does not have contents, return empty dataframe
         print("Person data was not found, please enter a correct BSN.")
         return pdata
 
@@ -116,17 +196,24 @@ def main():
     if country:  # if a valid input was recorded. None exits the program.
         sheet1, sheet2, isValid = readDB()  # Fetch excel file and store sheets
         if isValid:  # Make sure the datasheet actually exists
-            pdata = pd.DataFrame()  # Create empty dataframe
+            pdata = []  # Create empty list
             bsn = ' '
-            while pdata.empty and bsn:
+            while (not pdata) and bsn:
                 bsn = userID()  # Fetch user input: BSN
                 # Check if BSN is not empty. Empty BSN means exit program
                 if bsn:
                     pdata = bsnLookup(bsn, sheet1)  # Use BSN to look up User
-                    print("Person data:")
-                    print(pdata)
                 else:
                     print("Exit")
+            if pdata:  # If pdata is not an empty list
+                print(pdata)
+                # Returns a list of country relevant data
+                cdata = cdataLookup(country, sheet2)
+                print(cdata)
+                # Check which vaccination standard the country has
+                x = cdata[2]
+                if x == '2  of  1 indien Jansen/Astra Zenica':
+                    validateJAorAZ(cdata, pdata)
 
 
 # Call main function
