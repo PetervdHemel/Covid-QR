@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from os import getcwd, path
 from write_files import checkDir
-from datetime import datetime
+from datetime import datetime, date
 
 euCountries = ('België', 'Bulgarije', 'Zuid-Cyprus', 'Denemarken', 'Duitsland',
                'Estland', 'Finland', 'Frankrijk', 'Griekenland',
@@ -20,6 +20,112 @@ def genCert(cdata, pdata, passed, reason=None):
     print(f"Reason(s): {reason}")
 
 
+def covidpositiveTest(cdata, pdata, reason, counter):
+    '''
+    Check if a country accepts earlier Covid Positive ratings as a vaccination,
+    whether the person has had them, or the timespan in which it is accepted.
+    '''
+    if cdata[3] == 'Nee':
+        print("Country does not accept Covid positive tests.")
+        return reason, counter
+
+    # Save timespans for country specific covid positive tests
+    if len(cdata[3]) == 33:
+        try:
+            print(int(cdata[3][24:25]))
+            covidTime = int(cdata[3][24:25])
+        except ValueError:
+            print("Country has incorrect covid positive standards.")
+            return reason, counter
+    else:
+        try:
+            print(int(cdata[3][24:26]))
+            covidTime = int(cdata[3][24:26])
+        except ValueError:
+            print("Country has incorrect covid positive standards.")
+            return reason, counter
+
+    # Test if person has had any positive Covid tests in the past
+    if not pdata[7] == 'nvt':
+        start_date = pdata[7]
+        today = date.today().strftime("%d/%m/%Y")
+        # dd/mm/YY
+        end_date = datetime.strptime(today, "%d/%m/%Y")
+
+        print(f"type start_date: {type(start_date)}")
+        print(f"type end_date: {type(end_date)}")
+
+        # Calculate the number of months since positve test
+        num_months = (end_date.year - start_date.year) * \
+            12 + (end_date.month - start_date.month)
+        print(f"Number of months: {num_months}")
+
+        if covidTime >= num_months:  # If person follows country regulation
+            counter += 1
+
+        # Update reason
+        reason += f"Previously had Covid {num_months} months ago\n"
+    else:
+        reason += "Has not had Covid previously\n"
+
+    return reason, counter
+
+
+def pcrTest(cdata, pdata, reason, counter):
+    '''Check PCR test results, return the updated counter and reason'''
+    if cdata[4] == 'Ja':  # If country accepts all PCR tests
+        if not pdata[11] == 'Nee':  # If PCR test is not no
+            reason += "Completed PCR Test\n"
+            counter += 1
+            return reason, counter
+    # If country accepts PCR test with time limit
+    elif cdata[4][:3] == 'Ja,':
+        if not pdata[11] == 'Nee':  # If PCR test is not no
+            try:
+                # Validate if the input is proper and convert to integer
+                pcrTime = int(pdata[11][4:6])
+            except TypeError:
+                print("Invalid PCR time data.")
+            else:
+                # If the country time regulation for PCR tests >= person
+                if int(cdata[4][13:15]) >= pcrTime:
+                    reason += f"Valid PCR test {pcrTime} hours old\n"
+                    counter += 1
+                    return reason, counter
+
+    # If PCR not accepted in cdata or no valid PCR test found
+    reason += "No valid PCR test\n"
+    return reason, counter
+
+
+def vaccineTest(cdata, pdata, reason, counter):
+    '''
+    Test if person has had any vaccination. Return updated counter and reason
+    '''
+    if not type(pdata[8]) is datetime:
+        print(f"No vaccinations: {pdata[8]}")
+        reason = "No vaccinations\n"
+        return reason, counter
+    else:
+        reason = f"Vaccination 1: {pdata[10]}\n"
+        counter += 1
+        if not pdata[9] == 'VOLDAAN':
+            # Test if person had a second vaccination
+            if not type(pdata[9]) is datetime:
+                print(
+                    f"No second vaccination or incorrect date/time: {pdata[9]}"
+                )
+                return reason, counter
+            else:  # If a second date for vaccination is registered.
+                reason = f"Vaccination 1 & 2: {pdata[10]}\n"
+                counter += 1
+                return reason, counter
+        else:  # If Vac2 == 'VOLDAAN'
+            reason = f"Vaccination 1 & 2: {pdata[10]}\n"
+            counter += 1
+            return reason, counter
+
+
 def validateCountryReqs(cdata, pdata, ptsReq, counter=0):
     '''
     Checks the country specific regulations and requirements, and adds to
@@ -29,28 +135,29 @@ def validateCountryReqs(cdata, pdata, ptsReq, counter=0):
     '''
     # Initialize variable that states reason for pass or failure.
     reason = ''
-    # Test if person has had any vaccination
-    if not type(pdata[8]) is datetime:
-        print(f"No vaccinations: {pdata[8]}")
-    else:
-        reason = f"Vaccination 1: {pdata[10]}\n"
-        counter += 1
-        if not pdata[9] == 'VOLDAAN':
-            # Test if person had a second vaccination
-            if not type(pdata) is datetime:
-                print(
-                    f"No second vaccination or incorrect date/time: {pdata[9]}"
-                )
-            else:  # If a second date for vaccination is registered.
-                reason = f"Vaccination 1 & 2: {pdata[10]}\n"
-                counter += 1
-        else:  # If Vac2 == 'VOLDAAN'
-            reason = f"Vaccination 1 & 2: {pdata[10]}\n"
-            counter += 1
+
+    # Test vaccines
+    reason, counter = vaccineTest(cdata, pdata, reason, counter)
 
     # First test completed, time to check if it passes:
     if counter >= ptsReq:
         genCert(cdata, pdata, True, reason)
+    else:
+        # Test PCR
+        reason, counter = pcrTest(cdata, pdata, reason, counter)
+
+        # Second test completed, time to check if it passes:
+        if counter >= ptsReq:
+            genCert(cdata, pdata, True, reason)
+        else:
+            # Test possible previous Covid case
+            reason, counter = covidpositiveTest(cdata, pdata, reason, counter)
+
+            # Third test completed, time to check if it passes:
+            if counter >= ptsReq:
+                genCert(cdata, pdata, True, reason)
+            else:  # If none of the requirements are met, return failure
+                genCert(cdata, pdata, False, reason)
 
 
 def validateJAorAZ(cdata, pdata):
@@ -204,16 +311,22 @@ def main():
                 if bsn:
                     pdata = bsnLookup(bsn, sheet1)  # Use BSN to look up User
                 else:
-                    print("Exit")
+                    print("Exit: no BSN given")
             if pdata:  # If pdata is not an empty list
                 print(pdata)
                 # Returns a list of country relevant data
                 cdata = cdataLookup(country, sheet2)
                 print(cdata)
                 # Check which vaccination standard the country has
-                x = cdata[2]
-                if x == '2  of  1 indien Jansen/Astra Zenica':
+                vaccStandard = cdata[2]
+                if vaccStandard == '2  of  1 indien Jansen/Astra Zenica':
                     validateJAorAZ(cdata, pdata)
+                elif vaccStandard == '1, ongeacht welk type':
+                    validateCountryReqs(cdata, pdata, 1)
+                elif vaccStandard == '1, alleen goedgekeurde vaccins':
+                    validateCountryReqs(cdata, pdata, 1)
+                elif vaccStandard == 2:
+                    validateCountryReqs(cdata, pdata, 2)
 
 
 # Call main function
