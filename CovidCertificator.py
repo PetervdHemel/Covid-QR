@@ -1,9 +1,21 @@
-import pandas as pd
+# Import spreadsheet dependancies
 import numpy as np
+import pandas as pd
+from openpyxl import load_workbook
+
+# Import file dependancies
 from os import getcwd, path
 from write_files import checkDir
-from datetime import datetime, date
+from PIL import Image
 
+# Import QR dependancies
+import segno
+
+# Other dependancies
+from datetime import datetime, date
+from uuid import uuid1
+
+# Initialize a tuple of all European countries
 euCountries = ('België', 'Bulgarije', 'Zuid-Cyprus', 'Denemarken', 'Duitsland',
                'Estland', 'Finland', 'Frankrijk', 'Griekenland',
                'Hongarije', 'Ierland', 'Italië', 'Kroatië', 'Letland',
@@ -11,13 +23,123 @@ euCountries = ('België', 'Bulgarije', 'Zuid-Cyprus', 'Denemarken', 'Duitsland',
                'Polen', 'Portugal', 'Roemenië', 'Slovenië', 'Slowakije',
                'Spanje', 'Tsjechië', 'Zweden')
 
+# Initialize the directory
+dir = getcwd() + '\\data'
 
-def genCert(cdata, pdata, passed, reason=None):
-    '''
 
+def createQR(dataString, country, passed):
     '''
-    print(f"Passed: {passed}")
-    print(f"Reason(s): {reason}")
+    Takes the QR data string and makes a file name, then uses segno to create
+    a coloured QR certificate depending on pass/deny.
+    Returns the complete name of the QR image.
+    '''
+    # Create the QR Code
+    qr = segno.make(dataString, micro=False)
+
+    # Create file name: country of travel _ date of creation
+    fileName = country + date.today().strftime("_%d-%m-%Y") + '.png'
+
+    # Set the complete name with the file path
+    completeName = path.join(dir, fileName)
+
+    # Save the relevant coloured QR code in the file path
+    if passed:
+        qr.save(completeName, scale=4, dark='green', quiet_zone='Lime')
+    else:
+        qr.save(completeName, scale=4, dark='red', quiet_zone='Maroon')
+
+    return completeName
+
+
+def appendDB(pdata, cid, id):
+    '''
+    Appends the unique ID, and full name of the user that the Covid certificate
+    is going to be created for to a different spreadsheet. This spreadsheet
+    is used by the QR certificate reader program to verify the validity of
+    the Covid certificate.
+    Returns True if succesfully written to spreadsheet.
+    '''
+    print("Writing...")
+
+    # Set directory
+    filename = path.join(dir, 'Covid-id.xlsx')
+
+    # New dataframe with the same columns
+    df = pd.DataFrame(
+        {'ID': [id], 'Voornaam': [pdata[1]], 'Achternaam': [pdata[2]]})
+
+    # Initiate writer on the user ID database
+    try:
+        writer = pd.ExcelWriter(filename, engine='openpyxl', mode='a')
+    except PermissionError:
+        print("Permission Error:\n")
+        print("Please close spreadsheet or give write permissions.")
+        return False
+    else:
+        # Open existing workbook
+        writer.book = load_workbook(filename=filename)
+
+        # Copy existing sheets
+        writer.sheets = dict((ws.title, ws) for ws in writer.book.worksheets)
+
+        # Write out new sheet at the last row + 1 of cid
+        df.to_excel(writer, index=False, header=False, startrow=len(cid) + 1)
+
+        writer.close()
+
+        print("...Done")
+
+        return True
+
+
+def genCert(cdata, pdata, cid, passed, country, reason=None):
+    '''
+    Creates a string variable that stores all information that will be present
+    in the QR code. Formatted like:
+    - Country of travel
+    - UUID
+    - BSN (if required)
+    - Reason for acceptance or denial (if required)
+    - PASS/DENY
+    '''
+    # Initialize information string for the QR certificate
+    qrstring = country + '\n'
+
+    # Generate unique ID for covid passport and add it to qrstring
+    id = str(uuid1())
+    qrstring += id + '\n'
+
+    # Add unique id and user name(s) to covid id database
+    appended = appendDB(pdata, cid, id)
+
+    if appended:
+        if cdata[5] == 'Ja':
+            # BSN required on certificate
+            qrstring += str(pdata[5]) + '\n'
+        else:
+            # BSN not required on certificate
+            qrstring += '\n'
+
+        if cdata[6] == 'Ja':
+            # Reason required on certificate
+            qrstring += reason + '\n'
+        else:
+            # Reason not required on certificate
+            qrstring += '\n'
+
+        if passed:
+            # If the person can travel to country
+            qrstring += 'PASS'
+        else:
+            # If the person cannot travel to country
+            qrstring += 'DENY'
+
+        # Create the QR image
+        qrName = createQR(qrstring, country, passed)
+
+        # Open the QR image using PIL
+        with Image.open(qrName) as im:
+            im.show()
 
 
 def covidpositiveTest(cdata, pdata, reason, counter):
@@ -146,23 +268,23 @@ def validateCountryReqs(cdata, pdata, ptsReq, counter=0):
 
     # First test completed, time to check if it passes:
     if counter >= ptsReq:
-        genCert(cdata, pdata, True, reason)
+        return True, reason
     else:
         # Test PCR
         reason, counter = pcrTest(cdata, pdata, reason, counter)
 
         # Second test completed, time to check if it passes:
         if counter >= ptsReq:
-            genCert(cdata, pdata, True, reason)
+            return True, reason
         else:
             # Test possible previous Covid case
             reason, counter = covidpositiveTest(cdata, pdata, reason, counter)
 
             # Third test completed, time to check if it passes:
             if counter >= ptsReq:
-                genCert(cdata, pdata, True, reason)
+                return True, reason
             else:  # If none of the requirements are met, return failure
-                genCert(cdata, pdata, False, reason)
+                return False, reason
 
 
 def validaterecVacc(cdata, pdata):
@@ -175,11 +297,14 @@ def validaterecVacc(cdata, pdata):
     if pdata[10] == 'ONB':
         reason, counter = vaccineTest(cdata, pdata, '', counter)
         if counter == 1:
-            validateCountryReqs(cdata, pdata, 1, -1)
+            passed, reason = validateCountryReqs(cdata, pdata, 1, -1)
+            return passed, reason
         else:
-            validateCountryReqs(cdata, pdata, 1, -2)
+            passed, reason = validateCountryReqs(cdata, pdata, 1, -2)
+            return passed, reason
     else:
-        validateCountryReqs(cdata, pdata, 1)
+        passed, reason = validateCountryReqs(cdata, pdata, 1)
+        return passed, reason
 
 
 def validateJAorAZ(cdata, pdata):
@@ -192,11 +317,12 @@ def validateJAorAZ(cdata, pdata):
     11: Geldige PCR test?
     '''
     if pdata[10] == 'AZ':
-        genCert(cdata, pdata, True, 'Astra Zenica Vaccination')
+        return True, 'Astra Zenica Vaccination'
     elif pdata[10] == 'JANS':
-        genCert(cdata, pdata, True, 'Janssen Vaccination')
+        return True, 'Janssen Vaccination'
     else:
-        validateCountryReqs(cdata, pdata, 2)
+        passed, reason = validateCountryReqs(cdata, pdata, 2)
+        return passed, reason
 
 
 def cdataLookup(country, datasheet):
@@ -256,25 +382,25 @@ def userID():
 
 
 def readDB():
-    # Set directory
-    dir = getcwd() + '\\data'
     # Check if directory exists
     dirCreated = checkDir(dir)
     if dirCreated:
-        filename = path.join(dir, 'Covid1.xlsx')
+        filename1 = path.join(dir, 'Covid1.xlsx')
+        filename2 = path.join(dir, 'Covid-id.xlsx')
         print("Attempting import of datasheets...")
         try:  # Read data sheets
-            data1 = pd.read_excel(filename, sheet_name=0)
-            data2 = pd.read_excel(filename, sheet_name=1)
+            data1 = pd.read_excel(filename1, sheet_name=0)
+            data2 = pd.read_excel(filename1, sheet_name=1)
+            data3 = pd.read_excel(filename2, sheet_name=0)
         except FileNotFoundError:
             print(f"Datasheet file not found in directory {dir}, please make")
             print("sure that the valid Covid datasheet is available.")
-            return data1, data2, False
+            return data1, data2, data3, False
         else:
             print(" ...Done.")
             # Check if data frames are not empty
             if not data1.empty or data2.empty:
-                return data1, data2, True
+                return data1, data2, data3, True
             else:
                 print("Incorrect datasheet, found to be empty.")
 
@@ -324,7 +450,8 @@ def main():
 
     country = userSelect()
     if country:  # if a valid input was recorded. None exits the program.
-        sheet1, sheet2, isValid = readDB()  # Fetch excel file and store sheets
+        # Fetch excel file and store sheets
+        sheet1, sheet2, cid, isValid = readDB()
         if isValid:  # Make sure the datasheet actually exists
             pdata = []  # Create empty list
             bsn = ' '
@@ -344,14 +471,16 @@ def main():
                 vaccStandard = cdata[2]
                 if vaccStandard == '2  of  1 indien Jansen/Astra Zenica':
                     # Checks if person has Janssen or AZ vaccine
-                    validateJAorAZ(cdata, pdata)
+                    passed, reason = validateJAorAZ(cdata, pdata)
                 elif vaccStandard == '1, ongeacht welk type':
-                    validateCountryReqs(cdata, pdata, 1)
+                    passed, reason = validateCountryReqs(cdata, pdata, 1)
                 elif vaccStandard == '1, alleen goedgekeurde vaccins':
                     # Checks if person has unrecognized vaccine
-                    validaterecVacc(cdata, pdata)
+                    passed, reason = validaterecVacc(cdata, pdata)
                 elif vaccStandard == 2:
-                    validateCountryReqs(cdata, pdata, 2)
+                    passed, reason = validateCountryReqs(cdata, pdata, 2)
+
+                genCert(cdata, pdata, cid, passed, country, reason)
 
 
 # Call main function
