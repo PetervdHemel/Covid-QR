@@ -34,7 +34,7 @@ def createQR(dataString, country, passed):
     Returns the complete name of the QR image.
     '''
     # Create the QR Code
-    qr = segno.make(dataString, micro=False)
+    qr = segno.make(dataString, micro=False, error='M')
 
     # Create file name: country of travel _ date of creation
     fileName = country + date.today().strftime("_%d-%m-%Y") + '.png'
@@ -122,7 +122,7 @@ def genCert(cdata, pdata, cid, passed, country, reason=None):
 
         if cdata[6] == 'Ja':
             # Reason required on certificate
-            qrstring += reason + '\n'
+            qrstring += reason[:-2] + '\n'
         else:
             # Reason not required on certificate
             qrstring += '\n'
@@ -186,9 +186,9 @@ def covidpositiveTest(cdata, pdata, reason, counter):
             counter += 1
 
         # Update reason
-        reason += f"Previously had Covid {num_months} months ago\n"
+        reason += f"Previously had Covid {num_months} months ago, "
     else:
-        reason += "Has not had Covid previously\n"
+        reason += "Has not had Covid previously, "
 
     return reason, counter
 
@@ -197,7 +197,7 @@ def pcrTest(cdata, pdata, reason, counter):
     '''Check PCR test results, return the updated counter and reason'''
     if cdata[4] == 'Ja':  # If country accepts all PCR tests
         if not pdata[11] == 'Nee':  # If PCR test is not no
-            reason += "Completed PCR Test\n"
+            reason += "Completed PCR Test, "
             counter += 1
             return reason, counter
     # If country accepts PCR test with time limit
@@ -211,12 +211,12 @@ def pcrTest(cdata, pdata, reason, counter):
             else:
                 # If the country time regulation for PCR tests >= person
                 if int(cdata[4][13:15]) >= pcrTime:
-                    reason += f"Valid PCR test {pcrTime} hours old\n"
+                    reason += f"Valid PCR test {pcrTime} hours old, "
                     counter += 1
                     return reason, counter
 
     # If PCR not accepted in cdata or no valid PCR test found
-    reason += "No valid PCR test\n"
+    reason += "No accepted PCR test, "
     return reason, counter
 
 
@@ -226,10 +226,10 @@ def vaccineTest(cdata, pdata, reason, counter):
     '''
     if not type(pdata[8]) is datetime:
         print(f"No vaccinations: {pdata[8]}")
-        reason = "No vaccinations\n"
+        reason = "No vaccinations, "
         return reason, counter
     else:
-        reason = f"Vaccination 1: {pdata[10]}\n"
+        reason = f"Vaccination 1: {pdata[10]}, "
         counter += 1
         if not pdata[9] == 'VOLDAAN':
             # Test if person had a second vaccination
@@ -239,11 +239,11 @@ def vaccineTest(cdata, pdata, reason, counter):
                 )
                 return reason, counter
             else:  # If a second date for vaccination is registered.
-                reason = f"Vaccination 1 & 2: {pdata[10]}\n"
+                reason = f"Vaccination 1 & 2: {pdata[10]}, "
                 counter += 1
                 return reason, counter
         else:  # If Vac2 == 'VOLDAAN'
-            reason = f"Vaccination 1 & 2: {pdata[10]}\n"
+            reason = f"Vaccination 1 & 2: {pdata[10]}, "
             counter += 1
             return reason, counter
 
@@ -264,7 +264,7 @@ def validateCountryReqs(cdata, pdata, ptsReq, counter=0):
     else:
         # Reset the counter to 0 and add unknown vaccine to reason
         counter = 0
-        reason = "Non-valid Vaccination\n"
+        reason = "Non-valid Vaccination, "
 
     # First test completed, time to check if it passes:
     if counter >= ptsReq:
