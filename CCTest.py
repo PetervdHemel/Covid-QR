@@ -26,23 +26,23 @@ def covidpositiveTest(cdata, pdata, reason, counter):
     whether the person has had them, or the timespan in which it is accepted.
     '''
     if cdata[3] == 'Nee':
-        print("Country does not accept Covid positive tests.")
+        # print("Country does not accept Covid positive tests.")
         return reason, counter
 
     # Save timespans for country specific covid positive tests
     if len(cdata[3]) == 33:
         try:
-            print(int(cdata[3][24:25]))
             covidTime = int(cdata[3][24:25])
         except ValueError:
             print("Country has incorrect covid positive standards.")
+            input()
             return reason, counter
     else:
         try:
-            print(int(cdata[3][24:26]))
             covidTime = int(cdata[3][24:26])
         except ValueError:
             print("Country has incorrect covid positive standards.")
+            input()
             return reason, counter
 
     # Test if person has had any positive Covid tests in the past
@@ -52,13 +52,13 @@ def covidpositiveTest(cdata, pdata, reason, counter):
         # dd/mm/YY
         end_date = datetime.strptime(today, "%d/%m/%Y")
 
-        print(f"type start_date: {type(start_date)}")
-        print(f"type end_date: {type(end_date)}")
+        # print(f"type start_date: {type(start_date)}")
+        # print(f"type end_date: {type(end_date)}")
 
         # Calculate the number of months since positve test
         num_months = (end_date.year - start_date.year) * \
             12 + (end_date.month - start_date.month)
-        print(f"Number of months: {num_months}")
+        # print(f"Number of months: {num_months}")
 
         if covidTime >= num_months:  # If person follows country regulation
             counter += 1
@@ -86,6 +86,7 @@ def pcrTest(cdata, pdata, reason, counter):
                 pcrTime = int(pdata[11][4:6])
             except TypeError:
                 print("Invalid PCR time data.")
+                input()
             else:
                 # If the country time regulation for PCR tests >= person
                 if int(cdata[4][13:15]) >= pcrTime:
@@ -103,7 +104,7 @@ def vaccineTest(cdata, pdata, reason, counter):
     Test if person has had any vaccination. Return updated counter and reason
     '''
     if not type(pdata[8]) is datetime:
-        print(f"No vaccinations: {pdata[8]}")
+        # print(f"No vaccinations: {pdata[8]}")
         reason = "No vaccinations\n"
         return reason, counter
     else:
@@ -112,9 +113,9 @@ def vaccineTest(cdata, pdata, reason, counter):
         if not pdata[9] == 'VOLDAAN':
             # Test if person had a second vaccination
             if not type(pdata[9]) is datetime:
-                print(
-                    f"No second vaccination or incorrect date/time: {pdata[9]}"
-                )
+                # print(
+                #    f"No second vaccination or incorrect date/time: {pdata[9]}"
+                # )
                 return reason, counter
             else:  # If a second date for vaccination is registered.
                 reason = f"Vaccination 1 & 2: {pdata[10]}\n"
@@ -212,49 +213,6 @@ def cdataLookup(country, datasheet):
     return cdata
 
 
-def bsnLookup(bsn, datasheet):
-    '''
-    Look up if the user is present in the database.
-    Returns an empty List if the BSN is not found in the datasheet.
-    '''
-    # Locate BSN in datasheet and save the entire row to pdata
-    df = datasheet.loc[datasheet['BSN'] == bsn]
-    df = df.iloc[0]
-    pdata = []
-
-    # Check if DataFrame has any contents (if BSN found)
-    if not len(df.index) == 0:
-        # Convert DataFrame to a List containing Person Data
-        pdata = df.values.tolist()
-        return pdata
-    else:
-        # If pdata does not have contents, return empty dataframe
-        print("Person data was not found, please enter a correct BSN.")
-        return pdata
-
-
-def userID():
-    '''Let the user input their identification for the database comparison.'''
-    while True:
-        try:  # User input
-            bsn = input("Please enter your valid BSN (8 digits): ")
-        except ValueError:
-            print("Raised ValueError.")  # ValueError Raised
-        else:
-            if len(bsn) == 8:  # Check to see if BSN is 8 digits
-                try:
-                    bsn = int(bsn)
-                except ValueError:
-                    print("Your BSN is not a number.")
-                else:
-                    return bsn
-            elif not bsn:
-                # If nothing was entered, return an empty BSN
-                return bsn
-            else:
-                print("Your BSN is not 8 digits.")
-
-
 def readDB():
     # Set directory
     dir = getcwd() + '\\data'
@@ -280,7 +238,6 @@ def readDB():
 
 
 def diacriticCheck(country):
-    '''Checks if user inputted country has a diacritic in its name.'''
     diacriticCountries = ('Belgie', 'Italie', 'Kroatie', 'Roemenie',
                           'Slovenie', 'Tsjechie')
 
@@ -326,20 +283,12 @@ def main():
     if country:  # if a valid input was recorded. None exits the program.
         sheet1, sheet2, isValid = readDB()  # Fetch excel file and store sheets
         if isValid:  # Make sure the datasheet actually exists
-            pdata = []  # Create empty list
-            bsn = ' '
-            while (not pdata) and bsn:
-                bsn = userID()  # Fetch user input: BSN
-                # Check if BSN is not empty. Empty BSN means exit program
-                if bsn:
-                    pdata = bsnLookup(bsn, sheet1)  # Use BSN to look up User
-                else:
-                    print("Exit: no BSN given.")
-            if pdata:  # If pdata is not an empty list
-                print(pdata)
-                # Returns a list of country relevant data
-                cdata = cdataLookup(country, sheet2)
-                print(cdata)
+            pdata = []
+            # Returns a list of country relevant data
+            cdata = cdataLookup(country, sheet2)
+            for i in range(999):
+                pdata = sheet1.iloc[i].values.tolist()
+                print(f"ID: {pdata[0]}")
                 # Check which vaccination standard the country has
                 vaccStandard = cdata[2]
                 if vaccStandard == '2  of  1 indien Jansen/Astra Zenica':
