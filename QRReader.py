@@ -10,7 +10,7 @@ from pyzbar import pyzbar
 
 # Other modules
 from format_file import format_datetime
-from os import path, getcwd, walk
+from os import path, getcwd
 from write_files import checkDir
 
 
@@ -44,26 +44,28 @@ def dbCheck(qrstring, dir, firstName, lastName):
     - PASS/DENY
     '''
 
-    # Run through the file names in directory and add them to a list
-    _, _, filenames = next(walk(dir))  # Add all filenames to a list
+    # Set directory
+    filename = path.join(dir, 'Covid-id.xlsx')
 
-    # Check if file name 'Covid-id.xlsx' is present
-    if 'Covid-id.xlsx' in filenames:
-        # Set directory
-        filename = path.join(dir, 'Covid-id.xlsx')
+    # Separate qrstring into a list with each line
+    dataList = qrstring.splitlines()
 
-        # Separate qrstring into a list with each line
-        dataList = qrstring.splitlines()
+    print(dataList)
 
-        print(dataList)
-
-        # Import datasheet
-        print("Attempting import of datasheet...")
+    # Import datasheet
+    print("Attempting import of datasheet...")
+    try:
         datasheet = pd.read_excel(filename, sheet_name=0)
+    except FileNotFoundError:
+        print(f"Database not found in {dir = }")
+    else:
         print("...Done.")
 
         # Locate UUID in datasheet, and save row as pdata
-        df = datasheet.loc[datasheet['ID'] == dataList[1]]
+        if dataList[1]:
+            df = datasheet.loc[datasheet['ID'] == dataList[1]]
+        else:
+            df = pd.DataFrame()
 
         # Checks if DataFrame has any contents (if UUID is found)
         if not len(df.index) == 0:
@@ -79,12 +81,11 @@ def dbCheck(qrstring, dir, firstName, lastName):
             # Check if names are the same as given on UUID match
             if firstName == pdata[1] and lastName == pdata[2]:
                 remfromDB(filename, index)
+                print("Passed Covid Check.")
+            else:
+                print("Your identification doesn't match your Covid passport.")
         else:
             print("Your Covid passport was already used or not legitimate.")
-
-    else:
-        # If not present, return False as the database cannot be found
-        print(f"Database not found in {dir = }")
 
 
 def read_qrcodes(frame, dir):
@@ -176,8 +177,9 @@ def main():
         if checkDir(dir):
             # Start camera input until valid QR is found, return QR string
             qrstring = camControl(dir)
-            # Separate string into list and adjust spreadsheet
-            dbCheck(qrstring, dir, firstName, lastName)
+            if qrstring:
+                # Separate string into list and adjust spreadsheet
+                dbCheck(qrstring, dir, firstName, lastName)
 
 
 # Call main function
