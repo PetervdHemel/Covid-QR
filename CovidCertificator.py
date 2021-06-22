@@ -1,17 +1,17 @@
-# Import spreadsheet dependancies
+# Import spreadsheet modules
 import numpy as np
 import pandas as pd
 from openpyxl import load_workbook
 
-# Import file dependancies
+# Import file modules
 from os import getcwd, path
 from write_files import checkDir
 from PIL import Image
 
-# Import QR dependancies
+# Import QR modules
 import segno
 
-# Other dependancies
+# Other modules
 from datetime import datetime, date
 from uuid import uuid1
 
@@ -44,9 +44,9 @@ def createQR(dataString, country, passed):
 
     # Save the relevant coloured QR code in the file path
     if passed:
-        qr.save(completeName, scale=4, dark='green', quiet_zone='Lime')
+        qr.save(completeName, scale=5, dark='green')
     else:
-        qr.save(completeName, scale=4, dark='red', quiet_zone='Maroon')
+        qr.save(completeName, scale=5, dark='red')
 
     return completeName
 
@@ -170,8 +170,10 @@ def covidpositiveTest(cdata, pdata, reason, counter):
     # Test if person has had any positive Covid tests in the past
     if not pdata[7] == 'nvt':
         start_date = pdata[7]
+
+        # Set today as a date in d/m/y. strftime makes it a string.
         today = date.today().strftime("%d/%m/%Y")
-        # dd/mm/YY
+        # dd/mm/YY as a datetime.datetime
         end_date = datetime.strptime(today, "%d/%m/%Y")
 
         print(f"type start_date: {type(start_date)}")
@@ -196,13 +198,13 @@ def covidpositiveTest(cdata, pdata, reason, counter):
 def pcrTest(cdata, pdata, reason, counter):
     '''Check PCR test results, return the updated counter and reason'''
     if cdata[4] == 'Ja':  # If country accepts all PCR tests
-        if not pdata[11] == 'Nee':  # If PCR test is not no
-            reason += "Completed PCR Test, "
+        if not pdata[11] == 'Nee':  # If PCR test is yes
+            reason += "PCR Tested, "
             counter += 1
             return reason, counter
     # If country accepts PCR test with time limit
     elif cdata[4][:3] == 'Ja,':
-        if not pdata[11] == 'Nee':  # If PCR test is not no
+        if not pdata[11] == 'Nee':  # If PCR test is yes
             try:
                 # Validate if the input is proper and convert to integer
                 pcrTime = int(pdata[11][4:6])
@@ -211,12 +213,12 @@ def pcrTest(cdata, pdata, reason, counter):
             else:
                 # If the country time regulation for PCR tests >= person
                 if int(cdata[4][13:15]) >= pcrTime:
-                    reason += f"Valid PCR test {pcrTime} hours old, "
+                    reason += f"PCR Test {pcrTime}h ago, "
                     counter += 1
                     return reason, counter
 
     # If PCR not accepted in cdata or no valid PCR test found
-    reason += "No accepted PCR test, "
+    reason += "No/invalid PCR, "
     return reason, counter
 
 
@@ -226,10 +228,10 @@ def vaccineTest(cdata, pdata, reason, counter):
     '''
     if not type(pdata[8]) is datetime:
         print(f"No vaccinations: {pdata[8]}")
-        reason = "No vaccinations, "
+        reason = "No vac, "
         return reason, counter
     else:
-        reason = f"Vaccination 1: {pdata[10]}, "
+        reason = f"Vac x1: {pdata[10]}, "
         counter += 1
         if not pdata[9] == 'VOLDAAN':
             # Test if person had a second vaccination
@@ -239,11 +241,11 @@ def vaccineTest(cdata, pdata, reason, counter):
                 )
                 return reason, counter
             else:  # If a second date for vaccination is registered.
-                reason = f"Vaccination 1 & 2: {pdata[10]}, "
+                reason = f"Vac x2: {pdata[10]}, "
                 counter += 1
                 return reason, counter
         else:  # If Vac2 == 'VOLDAAN'
-            reason = f"Vaccination 1 & 2: {pdata[10]}, "
+            reason = f"Vac x2: {pdata[10]}, "
             counter += 1
             return reason, counter
 
@@ -264,7 +266,7 @@ def validateCountryReqs(cdata, pdata, ptsReq, counter=0):
     else:
         # Reset the counter to 0 and add unknown vaccine to reason
         counter = 0
-        reason = "Non-valid Vaccination, "
+        reason = "N/A vac, "
 
     # First test completed, time to check if it passes:
     if counter >= ptsReq:
