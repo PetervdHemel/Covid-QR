@@ -73,6 +73,7 @@ def appendDB(pdata, cid, id):
     except PermissionError:
         print("Permission Error:\n")
         print("Please close spreadsheet or give write permissions.")
+        input()
         return False
     else:
         # Open existing workbook
@@ -147,7 +148,6 @@ def covidpositiveTest(cdata, pdata, reason, counter):
     whether the person has had them, or the timespan in which it is accepted.
     '''
     if cdata[3] == 'Nee':
-        print("Country does not accept Covid positive tests.")
         return reason, counter
 
     # Save timespans for country specific covid positive tests
@@ -175,13 +175,9 @@ def covidpositiveTest(cdata, pdata, reason, counter):
         # dd/mm/YY as a datetime.datetime
         end_date = datetime.strptime(today, "%d/%m/%Y")
 
-        print(f"type start_date: {type(start_date)}")
-        print(f"type end_date: {type(end_date)}")
-
         # Calculate the number of months since positve test
         num_months = (end_date.year - start_date.year) * \
             12 + (end_date.month - start_date.month)
-        print(f"Number of months: {num_months}")
 
         if covidTime >= num_months:  # If person follows country regulation
             counter += 1
@@ -226,7 +222,6 @@ def vaccineTest(cdata, pdata, reason, counter):
     Test if person has had any vaccination. Return updated counter and reason
     '''
     if not type(pdata[8]) is datetime:
-        print(f"No vaccinations: {pdata[8]}")
         reason = "No vac, "
         return reason, counter
     else:
@@ -235,9 +230,6 @@ def vaccineTest(cdata, pdata, reason, counter):
         if not pdata[9] == 'VOLDAAN':
             # Test if person had a second vaccination
             if not type(pdata[9]) is datetime:
-                print(
-                    f"No second vaccination or incorrect date/time: {pdata[9]}"
-                )
                 return reason, counter
             else:  # If a second date for vaccination is registered.
                 reason = f"Vac x2: {pdata[10]}, "
@@ -396,6 +388,7 @@ def readDB():
         except FileNotFoundError:
             print(f"Datasheet file not found in directory {dir}, please make")
             print("sure that the valid Covid datasheet is available.")
+            input()
             return data1, data2, data3, False
         else:
             print(" ...Done.")
@@ -404,6 +397,7 @@ def readDB():
                 return data1, data2, data3, True
             else:
                 print("Incorrect datasheet, found to be empty.")
+                input()
 
 
 def diacriticCheck(country):

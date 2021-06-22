@@ -180,6 +180,9 @@ def main():
             if qrstring:
                 # Separate string into list and adjust spreadsheet
                 dbCheck(qrstring, dir, firstName, lastName)
+            else:
+                print("Empty QR code.")
+        input()
 
 
 # Call main function
