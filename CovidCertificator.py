@@ -61,7 +61,6 @@ def appendDB(pdata, cid, id):
     '''
     print("Writing...")
 
-    # Set directory
     filename = path.join(dir, 'Covid-id.xlsx')
 
     # New dataframe with the same columns
