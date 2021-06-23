@@ -41,6 +41,7 @@ logs
 # Ignore Built Applications
 *.build/
 *.exe
+*.spec
 
 # Environments
 .env

@@ -4,7 +4,7 @@ import pandas as pd
 from openpyxl import load_workbook
 
 # Import file modules
-from os import getcwd, path
+from os import getcwd, path, chdir
 from write_files import checkDir
 from PIL import Image
 
@@ -24,6 +24,7 @@ euCountries = ('België', 'Bulgarije', 'Zuid-Cyprus', 'Denemarken', 'Duitsland',
                'Spanje', 'Tsjechië', 'Zweden')
 
 # Initialize the directory
+chdir(path.dirname(getcwd()))
 dir = getcwd() + '\\data'
 
 

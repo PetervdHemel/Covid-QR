@@ -10,7 +10,7 @@ from pyzbar import pyzbar
 
 # Other modules
 from format_file import format_datetime
-from os import path, getcwd
+from os import path, getcwd, chdir
 from write_files import checkDir
 
 
@@ -165,8 +165,9 @@ def names():
 
 
 def main():
-    # Get dir
-    dir = getcwd() + "\\data"
+    # Initialize the directory
+    chdir(path.dirname(getcwd()))
+    dir = getcwd() + '\\data'
 
     # Input traveler name
     firstName, lastName = names()
