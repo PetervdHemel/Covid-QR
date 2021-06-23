@@ -335,7 +335,7 @@ def fieldCheck(df, pdata):
     Header names in a list, then prints the relevant header name where the
     data is missing.
     '''
-
+    missing = False
     # Do some error checking to pdata to make sure none of the fields
     # are empty or missing
     for i, data in enumerate(pdata):
@@ -348,9 +348,12 @@ def fieldCheck(df, pdata):
                 std_headers = df.columns.tolist()
                 print("User data contains missing information: ")
                 print(f"{std_headers[i]} missing.")
-                return []  # Return empty list to continue loop
+                missing = True
 
-    return pdata
+    if missing:
+        return []
+    else:
+        return pdata
 
 
 def bsnLookup(bsn, datasheet):
