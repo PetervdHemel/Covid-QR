@@ -338,31 +338,34 @@ def bsnLookup(bsn, datasheet):
     Returns an empty List if the BSN is not found in the datasheet.
     '''
     # Locate BSN in datasheet and save the entire row to pdata
-    df = datasheet.loc[datasheet['BSN'] == bsn]
-    df = df.iloc[0]
-    pdata = []
-
-    # Check if DataFrame has any contents (if BSN found)
-    if not len(df.index) == 0:
-        # Convert DataFrame to a List containing Person Data
-        pdata = df.values.tolist()
-
-        # Do some error checking to pdata to make sure none of the fields
-        # are empty or missing
-        for item in pdata:
-            # We cannot do numpy.isnan() on non-float types.
-            if type(item) == float:
-                # NaN is returned by pandas when converting empty values to
-                # a DataFrame.
-                if np.isnan(item):
-                    print("User data contains missing information.\n")
-                    return []  # Return empty list to continue loop
-
-        return pdata
+    try:
+        df = datasheet.loc[datasheet['BSN'] == bsn]
+    except KeyError:  # If BSN is not found in spreadsheet
+        print("Incorrect Spreadsheet: BSN column not found in Covid1.xlsx")
     else:
-        # If pdata does not have contents, return empty dataframe
-        print("Person data was not found, please enter a correct BSN.")
-        return []
+        df = df.iloc[0]
+        pdata = []
+
+        # Check if DataFrame has any contents (if BSN found)
+        if not len(df.index) == 0:
+            # Convert DataFrame to a List containing Person Data
+            pdata = df.values.tolist()
+
+            # Do some error checking to pdata to make sure none of the fields
+            # are empty or missing
+            for item in pdata:
+                # We cannot do numpy.isnan() on non-float types.
+                if type(item) == float:
+                    # NaN is returned by pandas when converting empty values to
+                    # a DataFrame.
+                    if np.isnan(item):
+                        print("User data contains missing information.\n")
+                        return []  # Return empty list to continue loop
+
+            return pdata
+        else:
+            # If pdata does not have contents, return empty dataframe
+            print("Person data was not found, please enter a correct BSN.")
 
 
 def userID():
