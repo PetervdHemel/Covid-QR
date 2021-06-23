@@ -10,7 +10,7 @@ from pyzbar import pyzbar
 
 # Other modules
 from format_file import format_datetime
-from os import path, getcwd, chdir
+from os import path, getcwd, chdir, system
 from write_files import checkDir
 
 
@@ -183,7 +183,8 @@ def main():
                 dbCheck(qrstring, dir, firstName, lastName)
             else:
                 print("Empty QR code.")
-        input()
+
+    system('pause')
 
 
 # Call main function

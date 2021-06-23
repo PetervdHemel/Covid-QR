@@ -4,7 +4,7 @@ import pandas as pd
 from openpyxl import load_workbook
 
 # Import file modules
-from os import getcwd, path, chdir
+from os import getcwd, path, chdir, system
 from write_files import checkDir
 from PIL import Image
 
@@ -74,7 +74,6 @@ def appendDB(pdata, cid, id):
     except PermissionError:
         print("Permission Error:\n")
         print("Please close spreadsheet or give write permissions.")
-        input()
         return False
     else:
         # Open existing workbook
@@ -154,14 +153,12 @@ def covidpositiveTest(cdata, pdata, reason, counter):
     # Save timespans for country specific covid positive tests
     if len(cdata[3]) == 33:
         try:
-            print(int(cdata[3][24:25]))
             covidTime = int(cdata[3][24:25])
         except ValueError:
             print("Country has incorrect covid positive standards.")
             return reason, counter
     else:
         try:
-            print(int(cdata[3][24:26]))
             covidTime = int(cdata[3][24:26])
         except ValueError:
             print("Country has incorrect covid positive standards.")
@@ -332,6 +329,30 @@ def cdataLookup(country, datasheet):
     return cdata
 
 
+def fieldCheck(df, pdata):
+    '''
+    Checks if pdata has any empty fields. If found, stores the DataFrame's
+    Header names in a list, then prints the relevant header name where the
+    data is missing.
+    '''
+
+    # Do some error checking to pdata to make sure none of the fields
+    # are empty or missing
+    for i, data in enumerate(pdata):
+        # We cannot do numpy.isnan() on non-float types.
+        if type(data) == float:
+            # NaN is returned by pandas when converting empty values to
+            # a DataFrame.
+            if np.isnan(data):
+                # Fetch header names
+                std_headers = df.columns.tolist()
+                print("User data contains missing information: ")
+                print(f"{std_headers[i]} missing.")
+                return []  # Return empty list to continue loop
+
+    return pdata
+
+
 def bsnLookup(bsn, datasheet):
     '''
     Look up if the user is present in the database.
@@ -351,16 +372,7 @@ def bsnLookup(bsn, datasheet):
             # Convert DataFrame to a List containing Person Data
             pdata = df.values.tolist()
 
-            # Do some error checking to pdata to make sure none of the fields
-            # are empty or missing
-            for item in pdata:
-                # We cannot do numpy.isnan() on non-float types.
-                if type(item) == float:
-                    # NaN is returned by pandas when converting empty values to
-                    # a DataFrame.
-                    if np.isnan(item):
-                        print("User data contains missing information.\n")
-                        return []  # Return empty list to continue loop
+            pdata = fieldCheck(datasheet, pdata)
 
             return pdata
         else:
@@ -372,7 +384,7 @@ def userID():
     '''Let the user input their identification for the database comparison.'''
     while True:
         try:  # User input
-            bsn = input("Please enter your valid BSN (8 digits): ")
+            bsn = input("\nPlease enter your valid BSN (8 digits): ")
         except ValueError:
             print("Raised ValueError.")  # ValueError Raised
         else:
@@ -404,7 +416,6 @@ def readDB():
         except FileNotFoundError:
             print(f"Datasheet file not found in directory {dir}, please make")
             print("sure that the valid Covid datasheet is available.")
-            input()
             return None, None, None, False
         else:
             print(" ...Done.")
@@ -413,7 +424,6 @@ def readDB():
                 return data1, data2, data3, True
             else:
                 print("Incorrect datasheet, found to be empty.")
-                input()
                 return None, None, None, False
 
 
@@ -433,7 +443,7 @@ def userSelect():
     '''Let the user select a destination country to travel to.'''
     while True:
         try:  # User Input
-            destination = input("Enter a valid EU country to travel to: ")
+            destination = input("\nEnter a valid EU country to travel to: ")
         except ValueError:
             print("Raised ValueError.")  # ValueError Raised
         else:
@@ -463,6 +473,7 @@ def main():
     country = userSelect()
     if country:  # if a valid input was recorded. None exits the program.
         # Fetch excel file and store sheets
+        print("Attempting to fetch Excel spreadsheets...")
         sheet1, sheet2, cid, isValid = readDB()
         if isValid:  # Make sure the datasheet actually exists
             pdata = []  # Create empty list
@@ -476,10 +487,12 @@ def main():
                     print("Exit: no BSN given.")
             if pdata:  # If pdata is not an empty list
                 # Returns a list of country relevant data
+                print("Looking up country relevant data...")
                 cdata = cdataLookup(country, sheet2)
 
                 # Check which vaccination standard the country has
                 vaccStandard = cdata[2]
+                print("Iterating vaccination standards...")
                 if vaccStandard == '2  of  1 indien Jansen/Astra Zenica':
                     # Checks if person has Janssen or AZ vaccine
                     passed, reason = validateJAorAZ(cdata, pdata)
@@ -491,7 +504,10 @@ def main():
                 elif vaccStandard == 2:
                     passed, reason = validateCountryReqs(cdata, pdata, 2)
 
+                print("Generating Covid Certificate QR...")
                 genCert(cdata, pdata, cid, passed, country, reason)
+
+    system('pause')
 
 
 # Call main function
