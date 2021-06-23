@@ -346,11 +346,23 @@ def bsnLookup(bsn, datasheet):
     if not len(df.index) == 0:
         # Convert DataFrame to a List containing Person Data
         pdata = df.values.tolist()
+
+        # Do some error checking to pdata to make sure none of the fields
+        # are empty or missing
+        for item in pdata:
+            # We cannot do numpy.isnan() on non-float types.
+            if type(item) == float:
+                # NaN is returned by pandas when converting empty values to
+                # a DataFrame.
+                if np.isnan(item):
+                    print("User data contains missing information.\n")
+                    return []  # Return empty list to continue loop
+
         return pdata
     else:
         # If pdata does not have contents, return empty dataframe
         print("Person data was not found, please enter a correct BSN.")
-        return pdata
+        return []
 
 
 def userID():
@@ -390,7 +402,7 @@ def readDB():
             print(f"Datasheet file not found in directory {dir}, please make")
             print("sure that the valid Covid datasheet is available.")
             input()
-            return data1, data2, data3, False
+            return None, None, None, False
         else:
             print(" ...Done.")
             # Check if data frames are not empty
@@ -399,6 +411,7 @@ def readDB():
             else:
                 print("Incorrect datasheet, found to be empty.")
                 input()
+                return None, None, None, False
 
 
 def diacriticCheck(country):
@@ -459,10 +472,9 @@ def main():
                 else:
                     print("Exit: no BSN given.")
             if pdata:  # If pdata is not an empty list
-                print(pdata)
                 # Returns a list of country relevant data
                 cdata = cdataLookup(country, sheet2)
-                print(cdata)
+
                 # Check which vaccination standard the country has
                 vaccStandard = cdata[2]
                 if vaccStandard == '2  of  1 indien Jansen/Astra Zenica':
