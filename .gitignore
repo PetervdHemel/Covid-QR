@@ -37,6 +37,7 @@ logs
 .idea/
 .vscode/
 *.sw*
+.vs/
 
 # Ignore Built Applications
 *.build/
